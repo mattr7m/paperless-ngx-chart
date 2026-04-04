@@ -1,0 +1,34 @@
+{{- if and .Values.paperlessAi.enabled .Values.paperlessAi.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "paperless-ngx.paperlessAi.fullname" . }}
+  labels:
+    {{- include "paperless-ngx.labels" . | nindent 4 }}
+    app.kubernetes.io/component: paperless-ai
+  {{- with .Values.paperlessAi.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.paperlessAi.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.paperlessAi.ingress.ingressClassName }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.paperlessAi.ingress.host }}
+      http:
+        paths:
+          - backend:
+              service:
+                name: {{ include "paperless-ngx.paperlessAi.fullname" . }}
+                port:
+                  number: {{ .Values.paperlessAi.service.port }}
+            path: {{ .Values.paperlessAi.ingress.path }}
+            pathType: {{ .Values.paperlessAi.ingress.pathType }}
+  {{- if .Values.paperlessAi.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.paperlessAi.ingress.host }}
+      secretName: {{ .Values.paperlessAi.ingress.tls.secretName }}
+  {{- end }}
+{{- end }}

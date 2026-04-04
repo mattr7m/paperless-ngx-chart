@@ -45,6 +45,17 @@ paperless:
     PAPERLESS_CONSUMER_RECURSIVE: "true"
     PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS: "true"
 
+  ingress:
+    enabled: false
+    ingressClassName: ""
+    annotations: {}
+    host: ""
+    path: /
+    pathType: ImplementationSpecific
+    tls:
+      enabled: false
+      secretName: ""
+
   # Existing secret containing PAPERLESS_SECRET_KEY (Django secret key)
   existingSecret:
     secretKey:
@@ -162,6 +173,17 @@ paperlessAi:
     CORRESPONDENTS: "true"
     TITLES: "true"
 
+  ingress:
+    enabled: false
+    ingressClassName: ""
+    annotations: {}
+    host: ""
+    path: /
+    pathType: ImplementationSpecific
+    tls:
+      enabled: false
+      secretName: ""
+
   # Existing secret containing the paperless-ngx API token
   existingSecret:
     apiToken:
@@ -205,6 +227,17 @@ paperlessGpt:
     AUTO_OCR_TAG: paperless-gpt-ocr-auto
     OCR_PAGE_LIMIT: "5"
     TOKEN_LIMIT: "1000"
+
+  ingress:
+    enabled: false
+    ingressClassName: ""
+    annotations: {}
+    host: ""
+    path: /
+    pathType: ImplementationSpecific
+    tls:
+      enabled: false
+      secretName: ""
 
   # Existing secret containing the paperless-ngx API token
   existingSecret:
