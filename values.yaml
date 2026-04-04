@@ -93,6 +93,8 @@ redis:
     config:
       maxmemory: 256mb
       maxmemory-policy: allkeys-lru
+      # Must be 0 for single-replica setups; set to 1+ when replicas > 1
+      min-replicas-to-write: 0
 
 # ---------------------------------------------------------------------------
 # Gotenberg - office document conversion (optional, Part 2)
