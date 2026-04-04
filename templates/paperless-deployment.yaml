@@ -7,6 +7,8 @@ metadata:
     app.kubernetes.io/component: paperless
 spec:
   replicas: {{ .Values.paperless.replicas }}
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       {{- include "paperless-ngx.selectorLabels" . | nindent 6 }}
