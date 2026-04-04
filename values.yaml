@@ -1,0 +1,214 @@
+## Paperless-ngx Helm Chart Values
+## ================================
+
+nameOverride: ""
+fullnameOverride: ""
+
+# ---------------------------------------------------------------------------
+# Paperless-ngx core application (required)
+# ---------------------------------------------------------------------------
+paperless:
+  image:
+    repository: ghcr.io/paperless-ngx/paperless-ngx
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  replicas: 1
+
+  service:
+    type: ClusterIP
+    port: 8000
+
+  resources: {}
+
+  persistence:
+    media:
+      enabled: true
+      size: 10Gi
+      storageClass: ""
+      accessMode: ReadWriteOnce
+    consume:
+      enabled: true
+      size: 5Gi
+      storageClass: ""
+      accessMode: ReadWriteOnce
+    export:
+      enabled: true
+      size: 5Gi
+      storageClass: ""
+      accessMode: ReadWriteOnce
+
+  # Non-secret environment variables
+  env:
+    PAPERLESS_OCR_LANGUAGE: eng
+    PAPERLESS_TIME_ZONE: UTC
+    PAPERLESS_CONSUMER_RECURSIVE: "true"
+    PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS: "true"
+
+  # Existing secret containing PAPERLESS_SECRET_KEY (Django secret key)
+  existingSecret:
+    secretKey:
+      name: ""
+      key: PAPERLESS_SECRET_KEY
+
+# ---------------------------------------------------------------------------
+# PostgreSQL via CloudNativePG (required)
+# ---------------------------------------------------------------------------
+postgresql:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:16
+  database: paperless
+  owner: paperless
+
+  storage:
+    size: 10Gi
+    storageClass: ""
+
+  resources: {}
+
+  # Provide an existing secret for the database owner credentials.
+  # If empty, CNPG auto-generates a secret named <release>-postgresql-app.
+  # The secret must contain keys: username, password
+  existingSecret:
+    name: ""
+
+# ---------------------------------------------------------------------------
+# Redis via DandyDeveloper redis-ha subchart (required)
+# ---------------------------------------------------------------------------
+redis:
+  enabled: true
+  # -- Values below are passed through to the redis-ha subchart --
+  replicas: 1
+  # Enable auth and set existingSecret to a pre-created secret name.
+  # The secret must contain a key matching authKey (default: "auth").
+  auth: false
+  existingSecret: ""
+  authKey: auth
+  haproxy:
+    enabled: false
+    replicas: 1
+  sentinel:
+    enabled: true
+  redis:
+    config:
+      maxmemory: 256mb
+      maxmemory-policy: allkeys-lru
+
+# ---------------------------------------------------------------------------
+# Gotenberg - office document conversion (optional, Part 2)
+# ---------------------------------------------------------------------------
+gotenberg:
+  enabled: false
+
+  image:
+    repository: gotenberg/gotenberg
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  resources: {}
+
+# ---------------------------------------------------------------------------
+# Apache Tika - text extraction (optional, Part 2)
+# ---------------------------------------------------------------------------
+tika:
+  enabled: false
+
+  image:
+    repository: apache/tika
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 9998
+
+  resources: {}
+
+# ---------------------------------------------------------------------------
+# Paperless AI - automatic tagging & classification (optional, Part 3)
+# ---------------------------------------------------------------------------
+paperlessAi:
+  enabled: false
+
+  image:
+    repository: clusterzx/paperless-ai
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  persistence:
+    size: 5Gi
+    storageClass: ""
+    accessMode: ReadWriteOnce
+
+  env:
+    AI_PROVIDER: ollama
+    OLLAMA_API_URL: ""
+    OLLAMA_MODEL: ""
+    SCAN_INTERVAL: "30"
+    PROCESS_PREDEFINED_DOCUMENTS: "yes"
+    ADD_AI_TAG: "true"
+    TAGS: "true"
+    DOCUMENT_TYPES: "true"
+    CORRESPONDENTS: "true"
+    TITLES: "true"
+
+  # Existing secret containing the paperless-ngx API token
+  existingSecret:
+    apiToken:
+      name: ""
+      key: PAPERLESS_API_TOKEN
+    paperlessUsername:
+      name: ""
+      key: PAPERLESS_USERNAME
+
+# ---------------------------------------------------------------------------
+# Paperless GPT - vision OCR & LLM processing (optional, Part 3)
+# ---------------------------------------------------------------------------
+paperlessGpt:
+  enabled: false
+
+  image:
+    repository: ghcr.io/icereed/paperless-gpt
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 5000
+
+  persistence:
+    size: 5Gi
+    storageClass: ""
+    accessMode: ReadWriteOnce
+
+  env:
+    LLM_PROVIDER: ollama
+    LLM_MODEL: ""
+    OLLAMA_HOST: ""
+    VISION_PROVIDER: ollama
+    VISION_MODEL: ""
+    OCR_PROVIDER: llm
+    AUTO_GENERATE_TITLES: "false"
+    AUTO_GENERATE_TAGS: "false"
+    AUTO_GENERATE_CORRESPONDENTS: "false"
+    AUTO_GENERATE_DATE: "false"
+    AUTO_OCR_TAG: paperless-gpt-ocr-auto
+    OCR_PAGE_LIMIT: "5"
+    TOKEN_LIMIT: "1000"
+
+  # Existing secret containing the paperless-ngx API token
+  existingSecret:
+    apiToken:
+      name: ""
+      key: PAPERLESS_API_TOKEN
+    paperlessUsername:
+      name: ""
+      key: PAPERLESS_USERNAME

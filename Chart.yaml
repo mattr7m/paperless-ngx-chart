@@ -1,0 +1,13 @@
+apiVersion: v2
+name: paperless-ngx
+description: A Helm chart for deploying the paperless-ngx document management stack
+type: application
+version: 0.1.0
+appVersion: "2.14"
+
+dependencies:
+  - name: redis-ha
+    version: "~4.35"
+    repository: https://dandydeveloper.github.io/charts
+    condition: redis.enabled
+    alias: redis

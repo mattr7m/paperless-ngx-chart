@@ -1,0 +1,75 @@
+{{- if .Values.paperlessAi.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "paperless-ngx.paperlessAi.fullname" . }}
+  labels:
+    {{- include "paperless-ngx.labels" . | nindent 4 }}
+    app.kubernetes.io/component: paperless-ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "paperless-ngx.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: paperless-ai
+  template:
+    metadata:
+      labels:
+        {{- include "paperless-ngx.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: paperless-ai
+    spec:
+      containers:
+        - name: paperless-ai
+          image: "{{ .Values.paperlessAi.image.repository }}:{{ .Values.paperlessAi.image.tag }}"
+          imagePullPolicy: {{ .Values.paperlessAi.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            # Paperless-ngx connection
+            - name: PAPERLESS_API_URL
+              value: "http://{{ include "paperless-ngx.fullname" . }}:{{ .Values.paperless.service.port }}"
+            {{- if .Values.paperlessAi.existingSecret.apiToken.name }}
+            - name: PAPERLESS_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.paperlessAi.existingSecret.apiToken.name }}
+                  key: {{ .Values.paperlessAi.existingSecret.apiToken.key }}
+            {{- end }}
+            {{- if .Values.paperlessAi.existingSecret.paperlessUsername.name }}
+            - name: PAPERLESS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.paperlessAi.existingSecret.paperlessUsername.name }}
+                  key: {{ .Values.paperlessAi.existingSecret.paperlessUsername.key }}
+            {{- end }}
+            # User-provided env vars
+            {{- range $key, $val := .Values.paperlessAi.env }}
+            - name: {{ $key }}
+              value: {{ $val | quote }}
+            {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          {{- with .Values.paperlessAi.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "paperless-ngx.paperlessAi.fullname" . }}-data
+{{- end }}
