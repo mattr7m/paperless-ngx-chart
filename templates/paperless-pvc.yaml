@@ -1,4 +1,4 @@
-{{- if .Values.paperless.persistence.media.enabled }}
+{{- if and .Values.paperless.persistence.media.enabled (not .Values.paperless.persistence.media.existingClaim) }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -17,7 +17,7 @@ spec:
       storage: {{ .Values.paperless.persistence.media.size }}
 {{- end }}
 ---
-{{- if .Values.paperless.persistence.consume.enabled }}
+{{- if and .Values.paperless.persistence.consume.enabled (not .Values.paperless.persistence.consume.existingClaim) }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -36,7 +36,7 @@ spec:
       storage: {{ .Values.paperless.persistence.consume.size }}
 {{- end }}
 ---
-{{- if .Values.paperless.persistence.export.enabled }}
+{{- if and .Values.paperless.persistence.export.enabled (not .Values.paperless.persistence.export.existingClaim) }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

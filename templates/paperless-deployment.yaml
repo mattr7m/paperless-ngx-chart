@@ -115,15 +115,15 @@ spec:
         {{- if .Values.paperless.persistence.media.enabled }}
         - name: media
           persistentVolumeClaim:
-            claimName: {{ include "paperless-ngx.fullname" . }}-media
+            claimName: {{ .Values.paperless.persistence.media.existingClaim | default (printf "%s-media" (include "paperless-ngx.fullname" .)) }}
         {{- end }}
         {{- if .Values.paperless.persistence.consume.enabled }}
         - name: consume
           persistentVolumeClaim:
-            claimName: {{ include "paperless-ngx.fullname" . }}-consume
+            claimName: {{ .Values.paperless.persistence.consume.existingClaim | default (printf "%s-consume" (include "paperless-ngx.fullname" .)) }}
         {{- end }}
         {{- if .Values.paperless.persistence.export.enabled }}
         - name: export
           persistentVolumeClaim:
-            claimName: {{ include "paperless-ngx.fullname" . }}-export
+            claimName: {{ .Values.paperless.persistence.export.existingClaim | default (printf "%s-export" (include "paperless-ngx.fullname" .)) }}
         {{- end }}

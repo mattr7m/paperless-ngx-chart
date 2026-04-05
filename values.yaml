@@ -24,16 +24,19 @@ paperless:
   persistence:
     media:
       enabled: true
+      existingClaim: ""
       size: 10Gi
       storageClass: ""
       accessMode: ReadWriteOnce
     consume:
       enabled: true
+      existingClaim: ""
       size: 5Gi
       storageClass: ""
       accessMode: ReadWriteOnce
     export:
       enabled: true
+      existingClaim: ""
       size: 5Gi
       storageClass: ""
       accessMode: ReadWriteOnce
