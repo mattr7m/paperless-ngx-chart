@@ -162,9 +162,11 @@ paperlessAi:
     accessMode: ReadWriteOnce
 
   env:
-    AI_PROVIDER: ollama
-    OLLAMA_API_URL: ""
-    OLLAMA_MODEL: ""
+    # AI_PROVIDER: ollama, openai, or custom (for self-hosted OpenAI-compatible)
+    AI_PROVIDER: custom
+    CUSTOM_BASE_URL: ""
+    CUSTOM_MODEL: ""
+    CUSTOM_API_KEY: ""
     SCAN_INTERVAL: "30"
     PROCESS_PREDEFINED_DOCUMENTS: "yes"
     ADD_AI_TAG: "true"
@@ -206,7 +208,7 @@ paperlessGpt:
 
   service:
     type: ClusterIP
-    port: 5000
+    port: 8080
 
   persistence:
     size: 5Gi
@@ -214,19 +216,19 @@ paperlessGpt:
     accessMode: ReadWriteOnce
 
   env:
-    LLM_PROVIDER: ollama
+    # LLM_PROVIDER: openai, ollama, googleai, mistral, or anthropic
+    LLM_PROVIDER: openai
     LLM_MODEL: ""
-    OLLAMA_HOST: ""
-    VISION_PROVIDER: ollama
-    VISION_MODEL: ""
-    OCR_PROVIDER: llm
+    OPENAI_BASE_URL: ""
+    OPENAI_API_KEY: ""
+    # Vision OCR - uses OPENAI_BASE_URL when VISION_LLM_PROVIDER=openai
+    # VISION_LLM_PROVIDER: openai, ollama, mistral, or anthropic
+    # VISION_LLM_MODEL: ""
     AUTO_GENERATE_TITLES: "false"
     AUTO_GENERATE_TAGS: "false"
     AUTO_GENERATE_CORRESPONDENTS: "false"
     AUTO_GENERATE_DATE: "false"
     AUTO_OCR_TAG: paperless-gpt-ocr-auto
-    OCR_PAGE_LIMIT: "5"
-    TOKEN_LIMIT: "1000"
 
   ingress:
     enabled: false

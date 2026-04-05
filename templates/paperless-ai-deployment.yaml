@@ -31,7 +31,7 @@ spec:
           env:
             # Paperless-ngx connection
             - name: PAPERLESS_API_URL
-              value: "http://{{ include "paperless-ngx.fullname" . }}:{{ .Values.paperless.service.port }}"
+              value: "http://{{ include "paperless-ngx.fullname" . }}:{{ .Values.paperless.service.port }}/api"
             {{- if .Values.paperlessAi.existingSecret.apiToken.name }}
             - name: PAPERLESS_API_TOKEN
               valueFrom:
