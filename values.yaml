@@ -108,6 +108,35 @@ redis:
       min-replicas-to-write: 0
 
 # ---------------------------------------------------------------------------
+# LiteLLM Proxy - unified OpenAI-compatible gateway (optional)
+# ---------------------------------------------------------------------------
+litellm:
+  enabled: false
+
+  image:
+    repository: ghcr.io/berriai/litellm
+    tag: main-latest
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 4000
+
+  resources: {}
+
+  # Model routing — each entry maps a model name to a backend URL.
+  # LiteLLM forwards requests based on the "model" field in the request body.
+  models: []
+  # - name: my-text-model
+  #   provider: openai
+  #   apiBase: "http://my-llm-server:8081/v1"
+  #   apiKey: ""
+  # - name: my-vision-model
+  #   provider: openai
+  #   apiBase: "http://my-llm-server:8082/v1"
+  #   apiKey: ""
+
+# ---------------------------------------------------------------------------
 # Gotenberg - office document conversion (optional, Part 2)
 # ---------------------------------------------------------------------------
 gotenberg:

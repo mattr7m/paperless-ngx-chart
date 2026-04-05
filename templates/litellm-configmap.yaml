@@ -1,0 +1,19 @@
+{{- if .Values.litellm.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "paperless-ngx.fullname" . }}-litellm
+  labels:
+    {{- include "paperless-ngx.labels" . | nindent 4 }}
+    app.kubernetes.io/component: litellm
+data:
+  litellm_config.yaml: |
+    model_list:
+      {{- range .Values.litellm.models }}
+      - model_name: {{ .name }}
+        litellm_params:
+          model: {{ .provider | default "openai" }}/{{ .name }}
+          api_base: {{ .apiBase }}
+          api_key: {{ .apiKey | default "not-needed" | quote }}
+      {{- end }}
+{{- end }}
