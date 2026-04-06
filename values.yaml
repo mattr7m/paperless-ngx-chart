@@ -21,6 +21,9 @@ paperless:
 
   resources: {}
 
+  nodeSelector: {}
+  tolerations: []
+
   persistence:
     media:
       enabled: true

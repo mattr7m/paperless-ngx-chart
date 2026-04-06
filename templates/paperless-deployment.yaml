@@ -19,6 +19,14 @@ spec:
         {{- include "paperless-ngx.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: paperless
     spec:
+      {{- with .Values.paperless.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.paperless.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: paperless-ngx
           image: "{{ .Values.paperless.image.repository }}:{{ .Values.paperless.image.tag }}"
