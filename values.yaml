@@ -143,6 +143,42 @@ litellm:
   #   apiKey: ""
 
 # ---------------------------------------------------------------------------
+# Open WebUI - AI chat interface (optional)
+# ---------------------------------------------------------------------------
+openWebui:
+  enabled: false
+
+  image:
+    repository: ghcr.io/open-webui/open-webui
+    tag: main
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  resources: {}
+
+  persistence:
+    size: 5Gi
+    storageClass: ""
+    accessMode: ReadWriteOnce
+
+  env:
+    WEBUI_AUTH: "true"
+
+  ingress:
+    enabled: false
+    ingressClassName: ""
+    annotations: {}
+    host: ""
+    path: /
+    pathType: ImplementationSpecific
+    tls:
+      enabled: false
+      secretName: ""
+
+# ---------------------------------------------------------------------------
 # Gotenberg - office document conversion (optional, Part 2)
 # ---------------------------------------------------------------------------
 gotenberg:

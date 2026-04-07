@@ -1,0 +1,18 @@
+{{- if .Values.openWebui.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "paperless-ngx.fullname" . }}-open-webui-data
+  labels:
+    {{- include "paperless-ngx.labels" . | nindent 4 }}
+    app.kubernetes.io/component: open-webui
+spec:
+  accessModes:
+    - {{ .Values.openWebui.persistence.accessMode }}
+  {{- if .Values.openWebui.persistence.storageClass }}
+  storageClassName: {{ .Values.openWebui.persistence.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.openWebui.persistence.size }}
+{{- end }}
