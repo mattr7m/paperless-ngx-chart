@@ -24,5 +24,14 @@ data:
           api_key: {{ .apiKey | default "not-needed" | quote }}
           {{- end }}
           timeout: 300
+        {{- if or .tpm .rpm }}
+        model_info:
+          {{- if .tpm }}
+          tpm: {{ .tpm }}
+          {{- end }}
+          {{- if .rpm }}
+          rpm: {{ .rpm }}
+          {{- end }}
+        {{- end }}
       {{- end }}
 {{- end }}
