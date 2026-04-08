@@ -26,6 +26,9 @@ data:
           api_key: {{ .apiKey | default "not-needed" | quote }}
           {{- end }}
           timeout: 300
+          {{- if .maxParallelRequests }}
+          max_parallel_requests: {{ .maxParallelRequests }}
+          {{- end }}
         {{- if or .tpm .rpm }}
         model_info:
           {{- if .tpm }}
