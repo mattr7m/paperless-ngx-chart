@@ -107,3 +107,7 @@ connect to the first server pod via the headless service.
 {{- define "paperless-ngx.paperlessGpt.fullname" -}}
 {{- printf "%s-paperless-gpt" (include "paperless-ngx.fullname" .) }}
 {{- end }}
+
+{{- define "paperless-ngx.paperlessGptCloud.fullname" -}}
+{{- printf "%s-paperless-gpt-cloud" (include "paperless-ngx.fullname" .) }}
+{{- end }}

@@ -15,8 +15,14 @@ data:
       - model_name: {{ .name }}
         litellm_params:
           model: {{ .provider | default "openai" }}/{{ .name }}
+          {{- if .apiBase }}
           api_base: {{ .apiBase }}
+          {{- end }}
+          {{- if .apiKeyEnv }}
+          api_key: os.environ/{{ .apiKeyEnv }}
+          {{- else }}
           api_key: {{ .apiKey | default "not-needed" | quote }}
+          {{- end }}
           timeout: 300
       {{- end }}
 {{- end }}

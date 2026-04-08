@@ -33,6 +33,11 @@ spec:
             - name: http
               containerPort: 4000
               protocol: TCP
+          {{- if .Values.litellm.existingSecret }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.litellm.existingSecret }}
+          {{- end }}
           volumeMounts:
             - name: config
               mountPath: /etc/litellm

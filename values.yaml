@@ -130,17 +130,20 @@ litellm:
 
   resources: {}
 
+  # Existing secret with API keys as env vars (e.g. OPENAI_API_KEY, ANTHROPIC_API_KEY).
+  # Referenced in model configs via apiKeyEnv field.
+  existingSecret: ""
+
   # Model routing — each entry maps a model name to a backend URL.
   # LiteLLM forwards requests based on the "model" field in the request body.
+  # For cloud models, use apiKeyEnv to reference a key from existingSecret.
   models: []
-  # - name: my-text-model
+  # - name: my-local-model
   #   provider: openai
   #   apiBase: "http://my-llm-server:8081/v1"
-  #   apiKey: ""
-  # - name: my-vision-model
+  # - name: gpt-4o
   #   provider: openai
-  #   apiBase: "http://my-llm-server:8082/v1"
-  #   apiKey: ""
+  #   apiKeyEnv: OPENAI_API_KEY
 
 # ---------------------------------------------------------------------------
 # Open WebUI - AI chat interface (optional)
@@ -313,6 +316,60 @@ paperlessGpt:
       secretName: ""
 
   # Existing secret containing the paperless-ngx API token
+  existingSecret:
+    apiToken:
+      name: ""
+      key: PAPERLESS_API_TOKEN
+    paperlessUsername:
+      name: ""
+      key: PAPERLESS_USERNAME
+
+# ---------------------------------------------------------------------------
+# Paperless GPT Cloud - vision OCR via cloud model (optional)
+# Second instance of paperless-gpt using a cloud LLM for complex documents.
+# ---------------------------------------------------------------------------
+paperlessGptCloud:
+  enabled: false
+
+  image:
+    repository: ghcr.io/icereed/paperless-gpt
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 8080
+
+  persistence:
+    size: 5Gi
+    storageClass: ""
+    accessMode: ReadWriteOnce
+
+  env:
+    LLM_PROVIDER: openai
+    LLM_MODEL: ""
+    OPENAI_BASE_URL: ""
+    OPENAI_API_KEY: ""
+    VISION_LLM_PROVIDER: openai
+    VISION_LLM_MODEL: ""
+    OCR_PROVIDER: llm
+    AUTO_GENERATE_TITLES: "false"
+    AUTO_GENERATE_TAGS: "false"
+    AUTO_GENERATE_CORRESPONDENTS: "false"
+    AUTO_GENERATE_DATE: "false"
+    AUTO_OCR_TAG: paperless-gpt-ocr-cloud
+
+  ingress:
+    enabled: false
+    ingressClassName: ""
+    annotations: {}
+    host: ""
+    path: /
+    pathType: ImplementationSpecific
+    tls:
+      enabled: false
+      secretName: ""
+
   existingSecret:
     apiToken:
       name: ""
