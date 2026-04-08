@@ -10,6 +10,8 @@ data:
   litellm_config.yaml: |
     general_settings:
       request_timeout: 300
+    router_settings:
+      enable_pre_call_checks: true
     model_list:
       {{- range .Values.litellm.models }}
       - model_name: {{ .name }}
