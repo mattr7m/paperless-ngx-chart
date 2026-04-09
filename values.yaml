@@ -302,7 +302,7 @@ paperlessGpt:
     AUTO_GENERATE_TAGS: "false"
     AUTO_GENERATE_CORRESPONDENTS: "false"
     AUTO_GENERATE_DATE: "false"
-    AUTO_OCR_TAG: paperless-gpt-ocr-auto
+    AUTO_OCR_TAG: paperless-gpt-ocr-local-auto
 
   ingress:
     enabled: false
@@ -357,7 +357,7 @@ paperlessGptCloud:
     AUTO_GENERATE_TAGS: "false"
     AUTO_GENERATE_CORRESPONDENTS: "false"
     AUTO_GENERATE_DATE: "false"
-    AUTO_OCR_TAG: paperless-gpt-ocr-cloud
+    AUTO_OCR_TAG: paperless-gpt-ocr-cloud-auto
 
   ingress:
     enabled: false

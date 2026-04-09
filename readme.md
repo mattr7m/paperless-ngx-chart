@@ -79,7 +79,7 @@ Create a **separate paperless-ngx user** for each service that connects to the A
 | User | Purpose | Permissions |
 |------|---------|-------------|
 | `paperless-ai` | Auto classification | Superuser (creates tags, types, correspondents) |
-| `paperless-gpt` | Local vision OCR | Superuser (reads/updates all documents) |
+| `paperless-gpt-local` | Local vision OCR | Superuser (reads/updates all documents) |
 | `paperless-gpt-cloud` | Cloud vision OCR | Superuser (reads/updates all documents) |
 | `open-webui` | Document search chat | Superuser (reads all documents, tags, types) |
 
@@ -101,7 +101,7 @@ Secret naming convention:
 | Secret Name | Used By |
 |------------|---------|
 | `paperless-ai-token` | Paperless AI |
-| `paperless-gpt-token` | Paperless GPT (local) |
+| `paperless-gpt-local-token` | Paperless GPT (local) |
 | `paperless-gpt-cloud-token` | Paperless GPT Cloud |
 
 The Open WebUI token is configured in the tool's Valves (UI), not as a Kubernetes secret.
@@ -121,10 +121,10 @@ paperlessAi:
 paperlessGpt:
   existingSecret:
     apiToken:
-      name: paperless-gpt-token
+      name: paperless-gpt-local-token
       key: PAPERLESS_API_TOKEN
     paperlessUsername:
-      name: paperless-gpt-token
+      name: paperless-gpt-local-token
       key: PAPERLESS_USERNAME
 
 paperlessGptCloud:
@@ -266,8 +266,8 @@ Two paperless-gpt instances can run side-by-side, each watching a different tag:
 
 | Instance | Trigger Tag | Model | Use Case |
 |----------|------------|-------|----------|
-| `paperlessGpt` | `paperless-gpt-ocr-auto` | Local (e.g. qwen25-vl-7b) | Sensitive documents |
-| `paperlessGptCloud` | `paperless-gpt-ocr-cloud` | Cloud (e.g. Claude Sonnet) | Complex/poor-quality scans |
+| `paperlessGpt` | `paperless-gpt-ocr-local-auto` | Local (e.g. qwen25-vl-7b) | Sensitive documents |
+| `paperlessGptCloud` | `paperless-gpt-ocr-cloud-auto` | Cloud (e.g. Claude Sonnet) | Complex/poor-quality scans |
 
 ### OCR Source Tags via Nested Subfolders
 
@@ -276,9 +276,9 @@ Use nested consume subfolders to automatically tag documents with their OCR sour
 ```
 consume/
 ├── local-ocr/
-│   └── paperless-gpt-ocr-auto/     → tagged: local-ocr + paperless-gpt-ocr-auto
+│   └── paperless-gpt-ocr-local-auto/   → tagged: local-ocr + paperless-gpt-ocr-local-auto
 ├── cloud-ocr/
-│   └── paperless-gpt-ocr-cloud/    → tagged: cloud-ocr + paperless-gpt-ocr-cloud
+│   └── paperless-gpt-ocr-cloud-auto/   → tagged: cloud-ocr + paperless-gpt-ocr-cloud-auto
 ```
 
 After OCR processing, the trigger tag is removed but `local-ocr` or `cloud-ocr` remains — providing a permanent record of which model processed the document.
@@ -291,7 +291,7 @@ paperless:
     PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS: "true"
 ```
 
-Tags to create in paperless-ngx: `local-ocr`, `cloud-ocr`, `paperless-gpt-ocr-auto`, `paperless-gpt-ocr-cloud`.
+Tags to create in paperless-ngx: `local-ocr`, `cloud-ocr`, `paperless-gpt-ocr-local-auto`, `paperless-gpt-ocr-cloud-auto`.
 
 ---
 
@@ -420,7 +420,7 @@ openWebui:
 | CNPG auto-generated | paperless-ngx | `username`, `password` | Database credentials |
 | `paperless-secret-key` | paperless-ngx | `PAPERLESS_SECRET_KEY` | Django secret key |
 | `paperless-ai-token` | Paperless AI | `PAPERLESS_API_TOKEN`, `PAPERLESS_USERNAME` | API auth |
-| `paperless-gpt-token` | Paperless GPT (local) | `PAPERLESS_API_TOKEN`, `PAPERLESS_USERNAME` | API auth |
+| `paperless-gpt-local-token` | Paperless GPT (local) | `PAPERLESS_API_TOKEN`, `PAPERLESS_USERNAME` | API auth |
 | `paperless-gpt-cloud-token` | Paperless GPT Cloud | `PAPERLESS_API_TOKEN`, `PAPERLESS_USERNAME` | API auth |
 | `litellm-cloud-keys` | LiteLLM | `ANTHROPIC_API_KEY` (or others) | Cloud LLM API keys |
 
