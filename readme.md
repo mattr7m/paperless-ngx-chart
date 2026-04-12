@@ -153,7 +153,121 @@ paperless:
       key: PAPERLESS_SECRET_KEY
 ```
 
-### 6. Object Permissions
+### 6. Create Tags
+
+In the paperless-ngx UI at **Manage > Tags**, create the following. Set **no owner** on all tags so all service accounts can access them.
+
+| Tag | Matching Algorithm | Purpose |
+|-----|-------------------|---------|
+| `paperless-gpt-ocr-local-auto` | Exact | Triggers local vision OCR |
+| `paperless-gpt-ocr-cloud-auto` | Exact | Triggers cloud vision OCR |
+| `local-ocr` | None | Persistent tag — doc was OCR'd by local model |
+| `cloud-ocr` | None | Persistent tag — doc was OCR'd by cloud model |
+| `email` | None | Applied to email-ingested attachments (optional) |
+
+### 7. Create Consume Subfolders
+
+Create nested subfolders in the consume share. The outer folder applies a persistent source tag; the inner folder triggers the OCR pipeline.
+
+```
+<consume-share>/
+├── local-ocr/
+│   └── paperless-gpt-ocr-local-auto/
+├── cloud-ocr/
+│   └── paperless-gpt-ocr-cloud-auto/
+```
+
+Documents dropped in these folders are auto-tagged by paperless-ngx (via `PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS`). After OCR, the trigger tag is removed but `local-ocr` / `cloud-ocr` remains.
+
+### 8. Configure Paperless AI
+
+The Paperless AI wizard must be completed through the web UI after deployment. Env vars seed defaults but the wizard writes its own config.
+
+Open the Paperless AI ingress URL and complete the wizard:
+
+**AI Provider:**
+
+| Field | Value |
+|-------|-------|
+| AI Provider | Custom / OpenAI Compatible |
+| Base URL | `http://<release>-litellm:4000/v1` |
+| API Key | `sk-not-needed` |
+| Model | `qwen3-235b` (or your model name) |
+| Token Limit | `4096` |
+| Response Tokens | `2000` |
+
+**Paperless Connection:**
+
+| Field | Value |
+|-------|-------|
+| Paperless URL | `http://<release>:8000/api` |
+| API Token | (pre-populated from secret) |
+| Username | `paperless-ai` |
+
+**Advanced Settings:**
+
+| Setting | Value |
+|---------|-------|
+| Use existing Correspondents and Tags? | **No** |
+| Scan Interval | `*/30 * * * *` (cron format, every 30 min) |
+| Process only specific pre tagged documents? | **No** |
+| Tags | (leave empty — do not enter literal values) |
+| Add AI-processed tag? | **Yes** — tag name: `ai-processed` |
+| Use specific tags in prompt? | **No** |
+| Disable automatic processing? | **Unchecked** (auto enabled) |
+
+**AI Functions — enable all:**
+
+| Function | Enable |
+|----------|--------|
+| Tags Assignment | Yes |
+| Correspondent Detection | Yes |
+| Document Type Classification | Yes |
+| Title Generation | Yes |
+| Custom Fields | No (optional) |
+
+**Gotchas:**
+- `SCAN_INTERVAL` must be cron format (`*/30 * * * *`), not plain minutes
+- `PROCESS_PREDEFINED_DOCUMENTS` must be `no` in the values to process all documents
+- Documents with the `ai-processed` tag are skipped — remove it to re-process a document
+
+### 9. Configure Open WebUI
+
+Open the Open WebUI ingress URL, create an admin account, then set up the paperless search tool.
+
+**Register the tool:**
+1. Go to **Workspace > Tools > + (New Tool)**
+2. Paste the contents of `paperless_search.py` from [paperless-tools](https://github.com/mattr7m/paperless-tools)
+3. Click **Save**
+
+**Configure the tool (Valves):**
+1. Click the **gear icon** on the tool
+2. Set `base_url` to `http://<release>:8000` (internal service URL)
+3. Set `api_token` to the `open-webui` user's API token
+
+**Enable on model:**
+1. Go to **Workspace > Models > select your model > Tools**
+2. Enable "Paperless-ngx Document Search"
+
+**Enable native function calling:**
+1. Go to **Admin > Settings > Models > (select model) > Advanced Parameters > Function Calling > Native**
+
+**Set system prompt** on the model at **Workspace > Models > (select model) > System Prompt**:
+
+```
+You have access to the user's personal document library via the Paperless-ngx
+search tools. When the user asks about events, purchases, bills, invoices,
+maintenance records, or any information that could be in their scanned documents,
+ALWAYS use the search tools first before answering from general knowledge.
+The user's documents contain receipts, mail, flyers, statements, and other
+scanned paperwork.
+
+When searching, use simple keywords that would literally appear in the document
+text. Do not include words like "upcoming", "recent", "latest", or "my" in
+search queries — these words won't be in the documents.
+```
+
+### 10. Object Permissions
 
 Tags, correspondents, and document types created by AI are **private by default** (owned by the creating user). To make them visible to all users:
 - Clear the **Owner** field on each object, or
