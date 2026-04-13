@@ -1,0 +1,56 @@
+{{- if and .Values.paperless.persistence.media.enabled (not .Values.paperless.persistence.media.existingClaim) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "paperless-ngx.fullname" . }}-media
+  labels:
+    {{- include "paperless-ngx.labels" . | nindent 4 }}
+    app.kubernetes.io/component: paperless
+spec:
+  accessModes:
+    - {{ .Values.paperless.persistence.media.accessMode }}
+  {{- if .Values.paperless.persistence.media.storageClass }}
+  storageClassName: {{ .Values.paperless.persistence.media.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.paperless.persistence.media.size }}
+{{- end }}
+---
+{{- if and .Values.paperless.persistence.consume.enabled (not .Values.paperless.persistence.consume.existingClaim) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "paperless-ngx.fullname" . }}-consume
+  labels:
+    {{- include "paperless-ngx.labels" . | nindent 4 }}
+    app.kubernetes.io/component: paperless
+spec:
+  accessModes:
+    - {{ .Values.paperless.persistence.consume.accessMode }}
+  {{- if .Values.paperless.persistence.consume.storageClass }}
+  storageClassName: {{ .Values.paperless.persistence.consume.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.paperless.persistence.consume.size }}
+{{- end }}
+---
+{{- if and .Values.paperless.persistence.export.enabled (not .Values.paperless.persistence.export.existingClaim) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "paperless-ngx.fullname" . }}-export
+  labels:
+    {{- include "paperless-ngx.labels" . | nindent 4 }}
+    app.kubernetes.io/component: paperless
+spec:
+  accessModes:
+    - {{ .Values.paperless.persistence.export.accessMode }}
+  {{- if .Values.paperless.persistence.export.storageClass }}
+  storageClassName: {{ .Values.paperless.persistence.export.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.paperless.persistence.export.size }}
+{{- end }}

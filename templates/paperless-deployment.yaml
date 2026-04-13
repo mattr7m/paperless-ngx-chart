@@ -1,0 +1,137 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "paperless-ngx.fullname" . }}
+  labels:
+    {{- include "paperless-ngx.labels" . | nindent 4 }}
+    app.kubernetes.io/component: paperless
+spec:
+  replicas: {{ .Values.paperless.replicas }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "paperless-ngx.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: paperless
+  template:
+    metadata:
+      labels:
+        {{- include "paperless-ngx.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: paperless
+    spec:
+      {{- with .Values.paperless.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.paperless.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: paperless-ngx
+          image: "{{ .Values.paperless.image.repository }}:{{ .Values.paperless.image.tag }}"
+          imagePullPolicy: {{ .Values.paperless.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            # ---- Database connection (from CNPG secret) ----
+            - name: PAPERLESS_DBHOST
+              value: {{ include "paperless-ngx.postgresql.host" . }}
+            - name: PAPERLESS_DBPORT
+              value: "5432"
+            - name: PAPERLESS_DBNAME
+              value: {{ .Values.postgresql.database }}
+            - name: PAPERLESS_DBUSER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "paperless-ngx.postgresql.secretName" . }}
+                  key: username
+            - name: PAPERLESS_DBPASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "paperless-ngx.postgresql.secretName" . }}
+                  key: password
+            # ---- Redis connection ----
+            {{- if .Values.redis.enabled }}
+            {{- if .Values.redis.auth }}
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "paperless-ngx.redis.secretName" . }}
+                  key: {{ include "paperless-ngx.redis.secretKey" . }}
+            - name: PAPERLESS_REDIS
+              value: "redis://:$(REDIS_PASSWORD)@{{ include "paperless-ngx.redis.host" . }}:6379"
+            {{- else }}
+            - name: PAPERLESS_REDIS
+              value: "redis://{{ include "paperless-ngx.redis.host" . }}:6379"
+            {{- end }}
+            {{- end }}
+            # ---- Tika / Gotenberg (Part 2) ----
+            {{- if and .Values.tika.enabled .Values.gotenberg.enabled }}
+            - name: PAPERLESS_TIKA_ENABLED
+              value: "1"
+            - name: PAPERLESS_TIKA_ENDPOINT
+              value: "http://{{ include "paperless-ngx.tika.fullname" . }}:{{ .Values.tika.service.port }}"
+            - name: PAPERLESS_TIKA_GOTENBERG_ENDPOINT
+              value: "http://{{ include "paperless-ngx.gotenberg.fullname" . }}:{{ .Values.gotenberg.service.port }}"
+            {{- end }}
+            # ---- Django secret key ----
+            {{- if .Values.paperless.existingSecret.secretKey.name }}
+            - name: PAPERLESS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.paperless.existingSecret.secretKey.name }}
+                  key: {{ .Values.paperless.existingSecret.secretKey.key }}
+            {{- end }}
+            # ---- User-provided env vars ----
+            {{- range $key, $val := .Values.paperless.env }}
+            - name: {{ $key }}
+              value: {{ $val | quote }}
+            {{- end }}
+          volumeMounts:
+            {{- if .Values.paperless.persistence.media.enabled }}
+            - name: media
+              mountPath: /usr/src/paperless/media
+            {{- end }}
+            {{- if .Values.paperless.persistence.consume.enabled }}
+            - name: consume
+              mountPath: /usr/src/paperless/consume
+            {{- end }}
+            {{- if .Values.paperless.persistence.export.enabled }}
+            - name: export
+              mountPath: /usr/src/paperless/export
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          {{- with .Values.paperless.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        {{- if .Values.paperless.persistence.media.enabled }}
+        - name: media
+          persistentVolumeClaim:
+            claimName: {{ .Values.paperless.persistence.media.existingClaim | default (printf "%s-media" (include "paperless-ngx.fullname" .)) }}
+        {{- end }}
+        {{- if .Values.paperless.persistence.consume.enabled }}
+        - name: consume
+          persistentVolumeClaim:
+            claimName: {{ .Values.paperless.persistence.consume.existingClaim | default (printf "%s-consume" (include "paperless-ngx.fullname" .)) }}
+        {{- end }}
+        {{- if .Values.paperless.persistence.export.enabled }}
+        - name: export
+          persistentVolumeClaim:
+            claimName: {{ .Values.paperless.persistence.export.existingClaim | default (printf "%s-export" (include "paperless-ngx.fullname" .)) }}
+        {{- end }}

@@ -1,0 +1,34 @@
+{{- if and .Values.openWebui.enabled .Values.openWebui.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "paperless-ngx.fullname" . }}-open-webui
+  labels:
+    {{- include "paperless-ngx.labels" . | nindent 4 }}
+    app.kubernetes.io/component: open-webui
+  {{- with .Values.openWebui.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.openWebui.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.openWebui.ingress.ingressClassName }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.openWebui.ingress.host }}
+      http:
+        paths:
+          - backend:
+              service:
+                name: {{ include "paperless-ngx.fullname" . }}-open-webui
+                port:
+                  number: {{ .Values.openWebui.service.port }}
+            path: {{ .Values.openWebui.ingress.path }}
+            pathType: {{ .Values.openWebui.ingress.pathType }}
+  {{- if .Values.openWebui.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.openWebui.ingress.host }}
+      secretName: {{ .Values.openWebui.ingress.tls.secretName }}
+  {{- end }}
+{{- end }}

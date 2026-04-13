@@ -1,0 +1,379 @@
+## Paperless-ngx Helm Chart Values
+## ================================
+
+nameOverride: ""
+fullnameOverride: ""
+
+# ---------------------------------------------------------------------------
+# Paperless-ngx core application (required)
+# ---------------------------------------------------------------------------
+paperless:
+  image:
+    repository: ghcr.io/paperless-ngx/paperless-ngx
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  replicas: 1
+
+  service:
+    type: ClusterIP
+    port: 8000
+
+  resources: {}
+
+  nodeSelector: {}
+  tolerations: []
+
+  persistence:
+    media:
+      enabled: true
+      existingClaim: ""
+      size: 10Gi
+      storageClass: ""
+      accessMode: ReadWriteOnce
+    consume:
+      enabled: true
+      existingClaim: ""
+      size: 5Gi
+      storageClass: ""
+      accessMode: ReadWriteOnce
+    export:
+      enabled: true
+      existingClaim: ""
+      size: 5Gi
+      storageClass: ""
+      accessMode: ReadWriteOnce
+
+  # Non-secret environment variables
+  env:
+    PAPERLESS_OCR_LANGUAGE: eng
+    PAPERLESS_TIME_ZONE: UTC
+    PAPERLESS_CONSUMER_RECURSIVE: "true"
+    PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS: "true"
+
+  ingress:
+    enabled: false
+    ingressClassName: ""
+    annotations: {}
+    host: ""
+    path: /
+    pathType: ImplementationSpecific
+    tls:
+      enabled: false
+      secretName: ""
+
+  # Existing secret containing PAPERLESS_SECRET_KEY (Django secret key)
+  existingSecret:
+    secretKey:
+      name: ""
+      key: PAPERLESS_SECRET_KEY
+
+# ---------------------------------------------------------------------------
+# PostgreSQL via CloudNativePG (required)
+# ---------------------------------------------------------------------------
+postgresql:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:16
+  database: paperless
+  owner: paperless
+
+  storage:
+    size: 10Gi
+    storageClass: ""
+
+  resources: {}
+
+  # Provide an existing secret for the database owner credentials.
+  # If empty, CNPG auto-generates a secret named <release>-postgresql-app.
+  # The secret must contain keys: username, password
+  existingSecret:
+    name: ""
+
+# ---------------------------------------------------------------------------
+# Redis via DandyDeveloper redis-ha subchart (required)
+# ---------------------------------------------------------------------------
+redis:
+  enabled: true
+  # -- Values below are passed through to the redis-ha subchart --
+  replicas: 1
+  # Enable auth and set existingSecret to a pre-created secret name.
+  # The secret must contain a key matching authKey (default: "auth").
+  auth: false
+  existingSecret: ""
+  authKey: auth
+  haproxy:
+    enabled: false
+    replicas: 1
+  sentinel:
+    enabled: true
+  redis:
+    config:
+      maxmemory: 256mb
+      maxmemory-policy: allkeys-lru
+      # Must be 0 for single-replica setups; set to 1+ when replicas > 1
+      min-replicas-to-write: 0
+
+# ---------------------------------------------------------------------------
+# LiteLLM Proxy - unified OpenAI-compatible gateway (optional)
+# ---------------------------------------------------------------------------
+litellm:
+  enabled: false
+
+  image:
+    repository: ghcr.io/berriai/litellm
+    tag: main-latest
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 4000
+
+  resources: {}
+
+  # Existing secret with API keys as env vars (e.g. OPENAI_API_KEY, ANTHROPIC_API_KEY).
+  # Referenced in model configs via apiKeyEnv field.
+  existingSecret: ""
+
+  # Model routing — each entry maps a model name to a backend URL.
+  # LiteLLM forwards requests based on the "model" field in the request body.
+  # For cloud models, use apiKeyEnv to reference a key from existingSecret.
+  models: []
+  # - name: my-local-model
+  #   provider: openai
+  #   apiBase: "http://my-llm-server:8081/v1"
+  # - name: gpt-4o
+  #   provider: openai
+  #   apiKeyEnv: OPENAI_API_KEY
+
+# ---------------------------------------------------------------------------
+# Open WebUI - AI chat interface (optional)
+# ---------------------------------------------------------------------------
+openWebui:
+  enabled: false
+
+  image:
+    repository: ghcr.io/open-webui/open-webui
+    tag: main
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  resources: {}
+
+  persistence:
+    size: 5Gi
+    storageClass: ""
+    accessMode: ReadWriteOnce
+
+  env:
+    WEBUI_AUTH: "true"
+
+  ingress:
+    enabled: false
+    ingressClassName: ""
+    annotations: {}
+    host: ""
+    path: /
+    pathType: ImplementationSpecific
+    tls:
+      enabled: false
+      secretName: ""
+
+# ---------------------------------------------------------------------------
+# Gotenberg - office document conversion (optional, Part 2)
+# ---------------------------------------------------------------------------
+gotenberg:
+  enabled: false
+
+  image:
+    repository: gotenberg/gotenberg
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  resources: {}
+
+# ---------------------------------------------------------------------------
+# Apache Tika - text extraction (optional, Part 2)
+# ---------------------------------------------------------------------------
+tika:
+  enabled: false
+
+  image:
+    repository: apache/tika
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 9998
+
+  resources: {}
+
+# ---------------------------------------------------------------------------
+# Paperless AI - automatic tagging & classification (optional, Part 3)
+# ---------------------------------------------------------------------------
+paperlessAi:
+  enabled: false
+
+  image:
+    repository: clusterzx/paperless-ai
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  persistence:
+    size: 5Gi
+    storageClass: ""
+    accessMode: ReadWriteOnce
+
+  env:
+    # AI_PROVIDER: ollama, openai, or custom (for self-hosted OpenAI-compatible)
+    AI_PROVIDER: custom
+    CUSTOM_BASE_URL: ""
+    CUSTOM_MODEL: ""
+    CUSTOM_API_KEY: ""
+    SCAN_INTERVAL: "30"
+    PROCESS_PREDEFINED_DOCUMENTS: "yes"
+    ADD_AI_TAG: "true"
+    TAGS: "true"
+    DOCUMENT_TYPES: "true"
+    CORRESPONDENTS: "true"
+    TITLES: "true"
+
+  ingress:
+    enabled: false
+    ingressClassName: ""
+    annotations: {}
+    host: ""
+    path: /
+    pathType: ImplementationSpecific
+    tls:
+      enabled: false
+      secretName: ""
+
+  # Existing secret containing the paperless-ngx API token
+  existingSecret:
+    apiToken:
+      name: ""
+      key: PAPERLESS_API_TOKEN
+    paperlessUsername:
+      name: ""
+      key: PAPERLESS_USERNAME
+
+# ---------------------------------------------------------------------------
+# Paperless GPT - vision OCR & LLM processing (optional, Part 3)
+# ---------------------------------------------------------------------------
+paperlessGpt:
+  enabled: false
+
+  image:
+    repository: ghcr.io/icereed/paperless-gpt
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 8080
+
+  persistence:
+    size: 5Gi
+    storageClass: ""
+    accessMode: ReadWriteOnce
+
+  env:
+    # LLM_PROVIDER: openai, ollama, googleai, mistral, or anthropic
+    LLM_PROVIDER: openai
+    LLM_MODEL: ""
+    OPENAI_BASE_URL: ""
+    OPENAI_API_KEY: ""
+    # Vision OCR - uses OPENAI_BASE_URL when VISION_LLM_PROVIDER=openai
+    # VISION_LLM_PROVIDER: openai, ollama, mistral, or anthropic
+    # VISION_LLM_MODEL: ""
+    AUTO_GENERATE_TITLES: "false"
+    AUTO_GENERATE_TAGS: "false"
+    AUTO_GENERATE_CORRESPONDENTS: "false"
+    AUTO_GENERATE_DATE: "false"
+    AUTO_OCR_TAG: paperless-gpt-ocr-local-auto
+
+  ingress:
+    enabled: false
+    ingressClassName: ""
+    annotations: {}
+    host: ""
+    path: /
+    pathType: ImplementationSpecific
+    tls:
+      enabled: false
+      secretName: ""
+
+  # Existing secret containing the paperless-ngx API token
+  existingSecret:
+    apiToken:
+      name: ""
+      key: PAPERLESS_API_TOKEN
+    paperlessUsername:
+      name: ""
+      key: PAPERLESS_USERNAME
+
+# ---------------------------------------------------------------------------
+# Paperless GPT Cloud - vision OCR via cloud model (optional)
+# Second instance of paperless-gpt using a cloud LLM for complex documents.
+# ---------------------------------------------------------------------------
+paperlessGptCloud:
+  enabled: false
+
+  image:
+    repository: ghcr.io/icereed/paperless-gpt
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 8080
+
+  persistence:
+    size: 5Gi
+    storageClass: ""
+    accessMode: ReadWriteOnce
+
+  env:
+    LLM_PROVIDER: openai
+    LLM_MODEL: ""
+    OPENAI_BASE_URL: ""
+    OPENAI_API_KEY: ""
+    VISION_LLM_PROVIDER: openai
+    VISION_LLM_MODEL: ""
+    OCR_PROVIDER: llm
+    AUTO_GENERATE_TITLES: "false"
+    AUTO_GENERATE_TAGS: "false"
+    AUTO_GENERATE_CORRESPONDENTS: "false"
+    AUTO_GENERATE_DATE: "false"
+    AUTO_OCR_TAG: paperless-gpt-ocr-cloud-auto
+
+  ingress:
+    enabled: false
+    ingressClassName: ""
+    annotations: {}
+    host: ""
+    path: /
+    pathType: ImplementationSpecific
+    tls:
+      enabled: false
+      secretName: ""
+
+  existingSecret:
+    apiToken:
+      name: ""
+      key: PAPERLESS_API_TOKEN
+    paperlessUsername:
+      name: ""
+      key: PAPERLESS_USERNAME

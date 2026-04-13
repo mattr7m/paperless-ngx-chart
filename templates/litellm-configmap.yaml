@@ -1,0 +1,42 @@
+{{- if .Values.litellm.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "paperless-ngx.fullname" . }}-litellm
+  labels:
+    {{- include "paperless-ngx.labels" . | nindent 4 }}
+    app.kubernetes.io/component: litellm
+data:
+  litellm_config.yaml: |
+    general_settings:
+      request_timeout: 300
+    router_settings:
+      enable_pre_call_checks: true
+    model_list:
+      {{- range .Values.litellm.models }}
+      - model_name: {{ .name }}
+        litellm_params:
+          model: {{ .provider | default "openai" }}/{{ .name }}
+          {{- if .apiBase }}
+          api_base: {{ .apiBase }}
+          {{- end }}
+          {{- if .apiKeyEnv }}
+          api_key: os.environ/{{ .apiKeyEnv }}
+          {{- else }}
+          api_key: {{ .apiKey | default "not-needed" | quote }}
+          {{- end }}
+          timeout: 300
+          {{- if .maxParallelRequests }}
+          max_parallel_requests: {{ .maxParallelRequests }}
+          {{- end }}
+        {{- if or .tpm .rpm }}
+        model_info:
+          {{- if .tpm }}
+          tpm: {{ .tpm }}
+          {{- end }}
+          {{- if .rpm }}
+          rpm: {{ .rpm }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+{{- end }}
