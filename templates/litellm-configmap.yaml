@@ -29,8 +29,14 @@ data:
           {{- if .maxParallelRequests }}
           max_parallel_requests: {{ .maxParallelRequests }}
           {{- end }}
-        {{- if or .tpm .rpm }}
+        {{- if or .tpm .rpm .maxInputTokens .maxOutputTokens }}
         model_info:
+          {{- if .maxInputTokens }}
+          max_input_tokens: {{ .maxInputTokens }}
+          {{- end }}
+          {{- if .maxOutputTokens }}
+          max_output_tokens: {{ .maxOutputTokens }}
+          {{- end }}
           {{- if .tpm }}
           tpm: {{ .tpm }}
           {{- end }}
