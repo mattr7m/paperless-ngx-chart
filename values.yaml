@@ -134,6 +134,10 @@ litellm:
   # Referenced in model configs via apiKeyEnv field.
   existingSecret: ""
 
+  # Upper bound (seconds) for proxied requests. Per-model `timeout` overrides the
+  # 300s default for slow backends (e.g. local vision models).
+  requestTimeout: 300
+
   # Model routing — each entry maps a model name to a backend URL.
   # LiteLLM forwards requests based on the "model" field in the request body.
   # For cloud models, use apiKeyEnv to reference a key from existingSecret.
@@ -141,6 +145,7 @@ litellm:
   # - name: my-local-model
   #   provider: openai
   #   apiBase: "http://my-llm-server:8081/v1"
+  #   timeout: 1200   # optional, seconds (default 300)
   # - name: gpt-4o
   #   provider: openai
   #   apiKeyEnv: OPENAI_API_KEY
